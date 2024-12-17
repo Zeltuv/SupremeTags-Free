@@ -10,11 +10,9 @@ settings:
   categories: false # should supremetags use the category system?
   default-category: 'default' # used to set the tags category value when creating a new tag with the '/tag create' command
   update-check: true # the plugin will check if there is an update available.
-  legacy-hex-format: true # should the plugin use the legacy hex colors? (&#d5b47 instead of #d5b47)
   auto-merge: false # auto merges all tags from deluxetags into supremetags (DeluxeTags is required on the server)
   active-tag-glow: true # adds a hidden enchantment to the tag item that is active for the player.
   cost-system: false # should your players be able to buy tags?
-  cmi-color-support: false # allow the plugin to change color format to legacy '&x', to support CMI Chat, This will override 'legacy-hex-format'
   tag-command-in-disabled-worlds: true # should /tags command be disabled in 'disabled-worlds'.
   disabled-worlds: # what worlds should tags be allowed in, tags in this world will not be shown.
     - 'example'
@@ -22,6 +20,7 @@ settings:
   gui-messages: true # setting this to true, will enable 'tag-select-message' & 'reset-message'
   locked-view: false # this setting allows players to view locked/unlocked tags.
   none-output: '&6None' # this string will be displayed when a player has no tag selected.
+  only-show-player-access-tags: false # if true, the tag menus will only show the tags that the player has access to.
 
 ############################################################
 # +------------------------------------------------------+ #
@@ -71,9 +70,16 @@ data:
   # Credentials for the database.
   username: 'user'
   password: 'pass'
-  # leave this, if you don't know how to use options.
-  options: 'useSSL=false&autoReconnect=true'
   useSSL: false
+
+  # connection pool settings.
+  mysql-pool-settings:
+    minimum-idle: 10
+    maximum-pool-size: 20
+    timeouts:
+      idle: 870000000
+      connection: 870000000
+      max-lifetime: 870000000
 
 ############################################################
 # +------------------------------------------------------+ #
@@ -137,7 +143,6 @@ gui:
     reset-tag-material: 'RED_DYE'
     active-tag-material: 'NAME_TAG'
     close-menu-material: 'BARRIER'
-    refresh-material: 'GREEN_DYE'
   # edit the item names of all items inside the gui.
   strings:
     back-item: '&7Back'
@@ -145,12 +150,10 @@ gui:
     reset-item: '&cReset'
     active-item: '&7Active: &6%identifier%'
     close-item: '&cClose'
-    refresh-item: '&aRefresh'
   # disable items in the gui.
   # setting these values to false will not display the item in tag gui.
   items:
     close-item: true
-    refresh-item: true
     reset-item: true
     glass-item: true
     active-item: true

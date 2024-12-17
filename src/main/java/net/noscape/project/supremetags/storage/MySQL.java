@@ -14,13 +14,13 @@ public class MySQL {
 
     private boolean isConnected = false;
 
-    public MySQL(String host, int port, String database, String username, String password, String options, boolean useSSL) {
-        config.setIdleTimeout(870000000);
-        config.setMaxLifetime(870000000);
-        config.setConnectionTimeout(870000000);
-        config.setMinimumIdle(20);
+    public MySQL(String host, int port, String database, String username, String password, boolean useSSL) {
+        config.setIdleTimeout(SupremeTags.getInstance().getConfig().getInt("data.mysql-pool-settings.timeouts.idle"));
+        config.setMaxLifetime(SupremeTags.getInstance().getConfig().getInt("data.mysql-pool-settings.timeouts.max-lifetime"));
+        config.setConnectionTimeout(SupremeTags.getInstance().getConfig().getInt("data.mysql-pool-settings.timeouts.connection"));
+        config.setMinimumIdle(SupremeTags.getInstance().getConfig().getInt("data.mysql-pool-settings.minimum-idle"));
         config.setRegisterMbeans(true);
-        config.setMaximumPoolSize(10);
+        config.setMaximumPoolSize(SupremeTags.getInstance().getConfig().getInt("data.mysql-pool-settings.maximum-pool-size"));
 
         config.setConnectionTestQuery("SELECT 1");
         config.setDataSourceClassName("com.mysql.cj.jdbc.MysqlDataSource");

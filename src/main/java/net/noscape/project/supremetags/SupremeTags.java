@@ -22,13 +22,12 @@ import net.noscape.project.supremetags.storage.*;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.io.IOException;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -81,14 +80,22 @@ public final class SupremeTags extends JavaPlugin {
     public void onDisable() {
         tagManager.unloadTags();
         editorList.clear();
-        //setupList.clear();
 
         DataCache.clearCache();
 
         if (isMySQL()) {
             mysql.disconnect();
         }
+
+        if(isH2()) {
+            try {
+                h2.getConnection().close();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
+
 
     private void init() {
         instance = this;
@@ -108,7 +115,7 @@ public final class SupremeTags extends JavaPlugin {
         }
 
         if (isMySQL()) {
-            mysql = new MySQL(host, port, database, username, password, options, useSSL);
+            mysql = new MySQL(host, port, database, username, password, useSSL);
         }
 
         tagManager = new TagManager(getConfig().getBoolean("settings.cost-system"));

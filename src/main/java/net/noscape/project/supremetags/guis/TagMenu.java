@@ -19,12 +19,10 @@ import static net.noscape.project.supremetags.utils.Utils.*;
 public class TagMenu extends Paged {
 
     private final Map<String, Tag> tags;
-    private final Map<Integer, String> dataItem;
 
     public TagMenu(MenuUtil menuUtil) {
         super(menuUtil);
         tags = SupremeTags.getInstance().getTagManager().getTags();
-        dataItem = SupremeTags.getInstance().getTagManager().getDataItem();
     }
 
     @Override
@@ -45,9 +43,7 @@ public class TagMenu extends Paged {
         String back = SupremeTags.getInstance().getConfig().getString("gui.strings.back-item");
         String close = SupremeTags.getInstance().getConfig().getString("gui.strings.close-item");
         String next = SupremeTags.getInstance().getConfig().getString("gui.strings.next-item");
-        String refresh = SupremeTags.getInstance().getConfig().getString("gui.strings.refresh-item");
         String reset = SupremeTags.getInstance().getConfig().getString("gui.strings.reset-item");
-        String active = SupremeTags.getInstance().getConfig().getString("gui.strings.active-item");
 
         String insufficient = SupremeTags.getInstance().getConfig().getString("messages.insufficient-funds");
         String unlocked = SupremeTags.getInstance().getConfig().getString("messages.tag-unlocked");

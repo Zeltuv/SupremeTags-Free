@@ -2,6 +2,7 @@ package net.noscape.project.supremetags.utils;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
+import dev.lone.itemsadder.api.CustomStack;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.md_5.bungee.api.ChatColor;
 import net.noscape.project.supremetags.SupremeTags;
@@ -27,41 +28,62 @@ public class Utils {
     private static Pattern p1 = Pattern.compile("\\{#([0-9A-Fa-f]{6})\\}");
     private static Pattern p2 = Pattern.compile("&#([A-Fa-f0-9]){6}");
     private static Pattern p3 = Pattern.compile("#([A-Fa-f0-9]){6}");
-
-    private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("###.#");
+    private static Pattern p4 = Pattern.compile("<#([A-Fa-f0-9])>{6}");
+    private static Pattern p5 = Pattern.compile("<#&([A-Fa-f0-9])>{6}");
 
     public static String format(String message) {
-        // Check if the server version is less than 1.16
         if (isVersionLessThan("1.16")) {
-            // Now translate normal color codes
-            return org.bukkit.ChatColor.translateAlternateColorCodes('&', message);
+            message = ChatColor.translateAlternateColorCodes('&', message);
+            return message;
         } else {
-            // Server is 1.16 or above, so process both hex and normal color codes
-            if (SupremeTags.getInstance().isCmiHex()) {
-                Matcher match = p1.matcher(message);
-                while (match.find()) {
-                    getRGB(message);
-                }
-                return ChatColor.translateAlternateColorCodes('&', message);
-            } else if (SupremeTags.getInstance().isLegacyFormat()) {
-                message = message.replace(">>", "").replace("<<", "");
-                Matcher matcher = p2.matcher(message);
-                StringBuffer sb = new StringBuffer();
-                while (matcher.find()) {
-                    ChatColor hexColor = ChatColor.of(matcher.group().substring(1));
-                    matcher.appendReplacement(sb, hexColor.toString());
-                }
-                matcher.appendTail(sb);
-                return ChatColor.translateAlternateColorCodes('&', sb.toString());
-            } else {
-                Pattern pattern = p3;
-                for (Matcher matcher = pattern.matcher(message); matcher.find(); matcher = pattern.matcher(message)) {
-                    String color = message.substring(matcher.start(), matcher.end());
-                    message = message.replace(color, net.md_5.bungee.api.ChatColor.of(color) + ""); // You're missing this replacing
-                }
-                message = ChatColor.translateAlternateColorCodes('&', message); // Translates any & codes too
-                return message;
+
+            message = ChatColor.translateAlternateColorCodes('&', message);
+
+            // Handle hex color codes
+            Matcher hexMatcher = p1.matcher(message);
+            while (hexMatcher.find()) {
+                message = message.replace(hexMatcher.group(), ChatColor.of(hexMatcher.group().substring(1)).toString());
             }
+
+            hexMatcher = p2.matcher(message);
+            while (hexMatcher.find()) {
+                message = message.replace(hexMatcher.group(), ChatColor.of(hexMatcher.group().substring(1)).toString());
+            }
+
+            Matcher[] matchers = {p3.matcher(message), p4.matcher(message), p5.matcher(message)};
+            for (Matcher matcher : matchers) {
+                while (matcher.find()) {
+                    String hexColor = matcher.group().replaceAll("[<#&>]", "").substring(0, 6);
+                    message = message.replace(matcher.group(), ChatColor.of(hexColor).toString());
+                }
+            }
+
+            message = message.replace("<black>", "§0")
+                    .replace("<dark_blue>", "§1")
+                    .replace("<dark_green>", "§2")
+                    .replace("<dark_aqua>", "§3")
+                    .replace("<dark_red>", "§4")
+                    .replace("<dark_purple>", "§5")
+                    .replace("<gold>", "§6")
+                    .replace("<gray>", "§7")
+                    .replace("<dark_gray>", "§8")
+                    .replace("<blue>", "§9")
+                    .replace("<green>", "§a")
+                    .replace("<aqua>", "§b")
+                    .replace("<red>", "§c")
+                    .replace("<light_purple>", "§d")
+                    .replace("<yellow>", "§e")
+                    .replace("<white>", "§f")
+                    .replace("<obfuscated>", "§k")
+                    .replace("<bold>", "§l")
+                    .replace("<strikethrough>", "§m")
+                    .replace("<underlined>", "§n")
+                    .replace("<italic>", "§o")
+                    .replace("<reset>", "§r");
+
+            message = message.replace("$", "$");
+
+            return message;
         }
     }
 
@@ -195,6 +217,17 @@ public class Utils {
             return msg;
         }
         return temp;
+    }
+
+    public static ItemStack getItemWithIA(String id) {
+        if (CustomStack.isInRegistry(id)) {
+            CustomStack stack = CustomStack.getInstance(id);
+            if (stack != null) {
+                return stack.getItemStack();
+            }
+        }
+
+        return null;
     }
 
     public static String replacePlaceholders(Player user, String base) {

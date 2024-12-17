@@ -1,8 +1,10 @@
 package net.noscape.project.supremetags.guis;
 
+import me.arcaniax.hdb.api.HeadDatabaseAPI;
 import net.noscape.project.supremetags.*;
 import net.noscape.project.supremetags.handlers.menu.*;
 import org.bukkit.*;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.*;
 import org.bukkit.event.inventory.*;
 import org.bukkit.inventory.*;
@@ -79,103 +81,71 @@ public class MainMenu extends Menu {
 
     @Override
     public void setMenuItems() {
-
-        // loop through categories items.
+        // Loop through categories items
         for (String cats : getCatorgies()) {
             if (cats != null) {
-                boolean canSee = SupremeTags.getInstance().getCategoryManager().getCategoryConfig().getBoolean("categories." + cats + ".permission-see-category");
-                String permission = SupremeTags.getInstance().getCategoryManager().getCategoryConfig().getString("categories." + cats + ".permission");
-                String material = SupremeTags.getInstance().getCategoryManager().getCategoryConfig().getString("categories." + cats + ".material");
-                int slot = SupremeTags.getInstance().getCategoryManager().getCategoryConfig().getInt("categories." + cats + ".slot");
-                String displayname = SupremeTags.getInstance().getCategoryManager().getCategoryConfig().getString("categories." + cats + ".id_display");
+                // Fetch category configurations
+                FileConfiguration categoryConfig = SupremeTags.getInstance().getCategoryManager().getCategoryConfig();
+                boolean canSee = categoryConfig.getBoolean("categories." + cats + ".permission-see-category");
+                String permission = categoryConfig.getString("categories." + cats + ".permission");
+                String material = categoryConfig.getString("categories." + cats + ".material");
+                int slot = categoryConfig.getInt("categories." + cats + ".slot");
+                String displayName = categoryConfig.getString("categories." + cats + ".id_display");
 
-                if (permission != null && menuUtil.getOwner().hasPermission(permission) && canSee) {
-
-                    assert material != null;
-                    ItemStack cat_item = new ItemStack(Material.valueOf(material.toUpperCase()), 1);
-                    ItemMeta cat_itemMeta = cat_item.getItemMeta();
-
-                    assert cat_itemMeta != null;
-                    cat_itemMeta.setDisplayName(format(displayname));
-
-                    cat_itemMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-                    cat_itemMeta.addItemFlags(ItemFlag.HIDE_DYE);
-                    cat_itemMeta.addItemFlags(ItemFlag.HIDE_DESTROYS);
-
-                    // set lore
-                    ArrayList<String> lore = (ArrayList<String>) SupremeTags.getInstance().getCategoryManager().getCategoryConfig().getStringList("categories." + cats + ".lore");
-
-                    if (categoriesTags.get(cats) != null) {
-                        lore.replaceAll(s -> ChatColor.translateAlternateColorCodes('&', s).replaceAll("%tags_amount%", String.valueOf(categoriesTags.get(cats))));
-                    } else {
-                        lore.replaceAll(s -> ChatColor.translateAlternateColorCodes('&', s).replaceAll("%tags_amount%", String.valueOf(0)));
-                    }
-
-                    cat_itemMeta.setLore(color(lore));
-
-                    cat_item.setItemMeta(cat_itemMeta);
-
+                // Check permission
+                if (permission != null && shouldAddItem(menuUtil.getOwner().hasPermission(permission), canSee)) {
+                    ItemStack catItem = createCategoryItem(material, displayName, categoryConfig.getStringList("categories." + cats + ".lore"), categoriesTags.getOrDefault(cats, 0));
                     dataItem.put(slot, cats);
-
-                    inventory.setItem(slot, cat_item);
-                } else if (permission != null && !menuUtil.getOwner().hasPermission(permission) && !canSee) {
-
-                    assert material != null;
-                    ItemStack cat_item = new ItemStack(Material.valueOf(material.toUpperCase()), 1);
-                    ItemMeta cat_itemMeta = cat_item.getItemMeta();
-
-                    assert cat_itemMeta != null;
-                    cat_itemMeta.setDisplayName(format(displayname));
-
-                    cat_itemMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-                    cat_itemMeta.addItemFlags(ItemFlag.HIDE_DYE);
-                    cat_itemMeta.addItemFlags(ItemFlag.HIDE_DESTROYS);
-
-                    // set lore
-                    ArrayList<String> lore = (ArrayList<String>) SupremeTags.getInstance().getCategoryManager().getCategoryConfig().getStringList("categories." + cats + ".lore");
-                    if (categoriesTags.get(cats) != null) {
-                        lore.replaceAll(s -> ChatColor.translateAlternateColorCodes('&', s).replaceAll("%tags_amount%", String.valueOf(categoriesTags.get(cats))));
-                    } else {
-                        lore.replaceAll(s -> ChatColor.translateAlternateColorCodes('&', s).replaceAll("%tags_amount%", String.valueOf(0)));
-                    }
-                    cat_itemMeta.setLore(color(lore));
-
-                    cat_item.setItemMeta(cat_itemMeta);
-
-                    dataItem.put(slot, cats);
-
-                    inventory.setItem(slot, cat_item);
-                } else if (permission != null && menuUtil.getOwner().hasPermission(permission) && !canSee) {
-
-                    assert material != null;
-                    ItemStack cat_item = new ItemStack(Material.valueOf(material.toUpperCase()), 1);
-                    ItemMeta cat_itemMeta = cat_item.getItemMeta();
-
-                    assert cat_itemMeta != null;
-                    cat_itemMeta.setDisplayName(format(displayname));
-
-                    cat_itemMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-                    cat_itemMeta.addItemFlags(ItemFlag.HIDE_DYE);
-                    cat_itemMeta.addItemFlags(ItemFlag.HIDE_DESTROYS);
-
-                    // set lore
-                    ArrayList<String> lore = (ArrayList<String>) SupremeTags.getInstance().getCategoryManager().getCategoryConfig().getStringList("categories." + cats + ".lore");
-                    lore.replaceAll(s -> ChatColor.translateAlternateColorCodes('&', s).replaceAll("%tags_amount%", String.valueOf(categoriesTags.get(cats))));
-                    cat_itemMeta.setLore(color(lore));
-
-                    cat_item.setItemMeta(cat_itemMeta);
-
-                    dataItem.put(slot, cats);
-
-                    inventory.setItem(slot, cat_item);
+                    inventory.setItem(slot, catItem);
                 }
             }
         }
 
+        // Fill empty slots if configured
         if (SupremeTags.getInstance().getCategoryManager().getCategoryConfig().getBoolean("categories-menu-fill-empty")) {
             fillEmpty();
         }
     }
+
+    /**
+     * Determines if the item should be added based on permission and visibility.
+     */
+    private boolean shouldAddItem(boolean hasPermission, boolean canSee) {
+        return hasPermission || canSee; // Adjust based on required logic
+    }
+
+    /**
+     * Creates a category item based on material and other properties.
+     */
+    private ItemStack createCategoryItem(String material, String displayName, List<String> lore, int tagsAmount) {
+        ItemStack item;
+        ItemMeta meta;
+
+        if (material.contains("hdb-")) {
+            int id = Integer.parseInt(material.replace("hdb-", ""));
+            item = new HeadDatabaseAPI().getItemHead(String.valueOf(id));
+        } else if (material.contains("basehead-")) {
+            item = createSkull(material.replace("basehead-", ""));
+        } else if (material.contains("itemsadder-")) {
+            item = getItemWithIA(material.replace("itemsadder-", ""));
+        } else {
+            item = new ItemStack(Material.valueOf(material.toUpperCase()), 1);
+        }
+
+        meta = item.getItemMeta();
+        assert meta != null;
+
+        meta.setDisplayName(format(displayName));
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_DYE, ItemFlag.HIDE_DESTROYS);
+
+        // Set lore with formatted tags amount
+        lore.replaceAll(line -> ChatColor.translateAlternateColorCodes('&', line).replace("%tags_amount%", String.valueOf(tagsAmount)));
+        meta.setLore(color(lore));
+
+        item.setItemMeta(meta);
+        return item;
+    }
+
 
     public List<String> getCatorgies() {
         return catorgies;

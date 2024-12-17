@@ -113,10 +113,12 @@ public class ConfigManager {
          * Reloads the config from file
          */
         public void reload() {
+            if (name == null || name.isEmpty()) {
+                throw new IllegalArgumentException("Config name cannot be null or empty");
+            }
             this.file = new File(plugin.getDataFolder(), this.name);
             this.config = YamlConfiguration.loadConfiguration(file);
 
-            // Load defaults from resources if the config file doesn't exist
             try (Reader defConfigStream = new InputStreamReader(plugin.getResource(name), "UTF8")) {
                 if (defConfigStream != null) {
                     YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(defConfigStream);
