@@ -83,7 +83,7 @@ public class PlayerEvents implements Listener {
                 e.setFormat(replace);
             } else {
                 // Store the value of format(tag.getTag()) in a local variable
-                String formattedTag = format(tag.getTag().replace("$", "$")); // Escaping $
+                String formattedTag = format(tag.getTag()); // Escaping $
                 formattedTag = replacePlaceholders(player, formattedTag);
 
                 e.setFormat(format.replace("{tag}", formattedTag).replace("{supremetags_tag}", formattedTag).replace("{TAG}", formattedTag));

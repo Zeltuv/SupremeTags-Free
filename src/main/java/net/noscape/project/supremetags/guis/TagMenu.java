@@ -1,18 +1,30 @@
 package net.noscape.project.supremetags.guis;
 
-import de.tr7zw.nbtapi.*;
-import net.noscape.project.supremetags.*;
+import de.tr7zw.nbtapi.NBTItem;
+import me.arcaniax.hdb.api.HeadDatabaseAPI;
+import net.noscape.project.supremetags.SupremeTags;
 import net.noscape.project.supremetags.api.events.TagAssignEvent;
 import net.noscape.project.supremetags.api.events.TagBuyEvent;
 import net.noscape.project.supremetags.api.events.TagResetEvent;
 import net.noscape.project.supremetags.handlers.Tag;
-import net.noscape.project.supremetags.handlers.menu.*;
-import net.noscape.project.supremetags.storage.*;
-import org.bukkit.*;
-import org.bukkit.entity.*;
-import org.bukkit.event.inventory.*;
+import net.noscape.project.supremetags.handlers.menu.MenuUtil;
+import net.noscape.project.supremetags.handlers.menu.Paged;
+import net.noscape.project.supremetags.storage.UserData;
+import net.noscape.project.supremetags.utils.Utils;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static net.noscape.project.supremetags.utils.Utils.*;
 
@@ -187,5 +199,200 @@ public class TagMenu extends Paged {
     public void setMenuItems() {
         getTagItems();
         applyLayout();
+    }
+
+    public void getTagItems() {
+        Map<String, Tag> tags = SupremeTags.getInstance().getTagManager().getTags();
+
+        ArrayList<Tag> tag = new ArrayList<>();
+
+        if (SupremeTags.getInstance().getConfig().getBoolean("settings.only-show-player-access-tags")) {
+            for (Tag t : tags.values()) {
+                if (menuUtil.getOwner().hasPermission(t.getPermission())) {
+                    tag.add(t);
+                }
+            }
+        } else {
+            tag = new ArrayList<>(tags.values());
+        }
+
+        if (!tag.isEmpty()) {
+            int maxItemsPerPage = 36;
+
+            int startIndex = page * maxItemsPerPage;
+            int endIndex = Math.min(startIndex + maxItemsPerPage, tag.size());
+
+            tag.sort((tag1, tag2) -> {
+                boolean hasPermission1 = menuUtil.getOwner().hasPermission(tag1.getPermission());
+                boolean hasPermission2 = menuUtil.getOwner().hasPermission(tag2.getPermission());
+
+                if (hasPermission1 && !hasPermission2) {
+                    return -1; // tag1 comes before tag2
+                } else if (!hasPermission1 && hasPermission2) {
+                    return 1; // tag2 comes before tag1
+                } else {
+                    // Sort alphabetically if both tags have permission or both don't
+                    return tag1.getIdentifier().compareTo(tag2.getIdentifier());
+                }
+            });
+
+            currentItemsOnPage = 0;
+
+            for (int i = startIndex; i <= endIndex; i++) {
+                if (i > tag.size() - 1) {
+                    break;
+                }
+
+                Tag t = tag.get(i);
+                if (t == null) break;
+
+                if (i == endIndex) {
+                    continue;
+                }
+
+
+                String permission = t.getPermission();
+
+                if (!menuUtil.getOwner().hasPermission(permission) &&
+                        (!SupremeTags.getInstance().getConfig().getBoolean("settings.locked-view") &&
+                                !SupremeTags.getInstance().getConfig().getBoolean("settings.cost-system"))) {
+                    continue;
+                }
+
+                String displayname;
+
+                if (SupremeTags.getInstance().getTagManager().getTagConfig().getString("tags." + t.getIdentifier() + ".displayname") != null) {
+                    displayname = Objects.requireNonNull(SupremeTags.getInstance().getTagManager().getTagConfig().getString("tags." + t.getIdentifier() + ".displayname")).replace("%tag%", t.getTag());
+                } else {
+                    displayname = format("&7Tag: " + t.getTag());
+                }
+
+                if (SupremeTags.getInstance().isPlaceholderAPI()) {
+                    displayname = replacePlaceholders(menuUtil.getOwner(), displayname);
+                }
+
+                String material;
+
+                if (SupremeTags.getInstance().getTagManager().getTagConfig().getString("tags." + t.getIdentifier() + ".display-item") != null) {
+                    material = SupremeTags.getInstance().getTagManager().getTagConfig().getString("tags." + t.getIdentifier() + ".display-item");
+                } else {
+                    material = "NAME_TAG";
+                }
+
+                assert permission != null;
+
+                ItemStack tagItem;
+                ItemMeta tagMeta;
+                NBTItem nbt;
+
+                if (material.contains("hdb-")) {
+                    int id = Integer.parseInt(material.replace("hdb-", ""));
+                    HeadDatabaseAPI api = new HeadDatabaseAPI();
+                    tagItem = api.getItemHead(String.valueOf(id));
+                    tagMeta = tagItem.getItemMeta();
+                } else if (material.contains("basehead-")) {
+                    String id = material.replace("basehead-", "");
+                    tagItem = createSkull(id);
+                    tagMeta = tagItem.getItemMeta();
+                } else if (material.contains("itemsadder-")) {
+                    String id = material.replace("itemsadder-", "");
+                    tagItem = getItemWithIA(id);
+                    tagMeta = tagItem.getItemMeta();
+                } else {
+                    tagItem = new ItemStack(Material.valueOf(material.toUpperCase()), 1);
+                    tagMeta = tagItem.getItemMeta();
+                }
+
+                nbt = new NBTItem(tagItem);
+                nbt.setString("identifier", t.getIdentifier());
+
+                //if (menuUtil.getOwner().hasPermission(t.getPermission()) || permission.equalsIgnoreCase("none")) {
+                //    if (SupremeTagsPremium.getInstance().getTagManager().getTagConfig().getInt("tags." + t.getIdentifier() + ".custom-model-data") > 0) {
+                //        int modelData = SupremeTagsPremium.getInstance().getTagManager().getTagConfig().getInt("tags." + t.getIdentifier() + ".custom-model-data");
+                //        if (tagMeta != null)
+                //            tagMeta.setCustomModelData(modelData);
+                //    }
+                //} else {
+                //    if (SupremeTagsPremium.getInstance().getTagManager().getTagConfig().getInt("tags." + t.getIdentifier() + ".locked-tag.custom-model-data") > 0) {
+                //        int modelData = SupremeTagsPremium.getInstance().getTagManager().getTagConfig().getInt("tags." + t.getIdentifier() + ".locked-tag.custom-model-data");
+                //        if (tagMeta != null)
+                //            tagMeta.setCustomModelData(modelData);
+                //    }
+                //}
+
+                assert tagMeta != null;
+
+                if (UserData.getActive(menuUtil.getOwner().getUniqueId()).equalsIgnoreCase(t.getIdentifier()) && SupremeTags.getInstance().getConfig().getBoolean("settings.active-tag-glow")) {
+                    tagMeta.addEnchant(Enchantment.KNOCKBACK, 1, true);
+                }
+
+                tagMeta.setDisplayName(format(displayname));
+                tagMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+                if (!isVersionLessThan("1.16")) {
+                    tagMeta.addItemFlags(ItemFlag.HIDE_DYE);
+                }
+                tagMeta.addItemFlags(ItemFlag.HIDE_DESTROYS);
+                tagMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                tagMeta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+
+                List<String> lore = getFormattedLore(t, permission);
+
+                String descriptionPlaceholder = "%description%";
+                String identifierPlaceholder = "%identifier%";
+                String tagPlaceholder = "%tag%";
+                String costPlaceholder = "%cost%";
+
+                for (int l = 0; l < lore.size(); l++) {
+                    String line = lore.get(l);
+
+                    line = line.replace(identifierPlaceholder, t.getIdentifier());
+                    line = line.replace(descriptionPlaceholder, t.getDescription());
+                    line = line.replace(tagPlaceholder, t.getTag());
+                    line = line.replace(costPlaceholder, String.valueOf(t.getCost()));
+                    line = Utils.replacePlaceholders(menuUtil.getOwner(), line);
+                    lore.set(l, line);
+
+                }
+
+                tagMeta.setLore(color(lore));
+
+                nbt.getItem().setItemMeta(tagMeta);
+                nbt.setString("identifier", t.getIdentifier());
+
+                inventory.addItem(nbt.getItem());
+
+                currentItemsOnPage++;
+            }
+        }
+    }
+
+    private List<String> getFormattedLore(Tag t, String permission) {
+        List<String> lore;
+        boolean isCostEnabled = SupremeTags.getInstance().getConfig().getBoolean("settings.cost-system");
+        boolean hasPermission = menuUtil.getOwner().hasPermission(permission) || permission.equalsIgnoreCase("none");
+        boolean isSelected = UserData.getActive(menuUtil.getOwner().getUniqueId()).equalsIgnoreCase(t.getIdentifier());
+
+        String lorePath;
+
+        if (isCostEnabled) {
+            lorePath = hasPermission ? (isSelected ? "selected-lore" : "locked-lore") : "locked-lore";
+        } else {
+            lorePath = hasPermission ? (isSelected ? "selected-lore" : "unlocked-lore") : "locked-permission";
+        }
+
+        lore = SupremeTags.getInstance().getConfig().getStringList("gui.tag-menu-none-categories.tag-item." + lorePath);
+
+        for (int i = 0; i < lore.size(); i++) {
+            String line = lore.get(i);
+
+            line = line.replace("%identifier%", t.getIdentifier())
+                    .replace("%description%", t.getDescription())
+                    .replace("%tag%", t.getTag())
+                    .replace("%cost%", String.valueOf(t.getCost()));
+            line = Utils.replacePlaceholders(menuUtil.getOwner(), line);
+            lore.set(i, line);
+        }
+
+        return lore;
     }
 }

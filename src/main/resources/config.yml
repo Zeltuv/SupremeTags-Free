@@ -94,6 +94,17 @@ gui:
   tag-menu-none-categories:
     title: '&8Tag Menu'
     tag-item: # to edit the tags display name, please proceed below to 'tags.<identifier>.displayname'
+      # used when the tag has been selected.
+      selected-lore:
+        - '&7&m-----------------------------'
+        - ''
+        - '&bIdentifier: &7%identifier%'
+        - ''
+        - '&dDescription:'
+        - '&7%description%'
+        - ''
+        - '&a&nTag has been selected!'
+        - '&7&m-----------------------------'
       # used for cost lores that are locked
       locked-lore:
         - '&c&m-----------------------------'

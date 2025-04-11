@@ -64,8 +64,6 @@ public class PAPI extends PlaceholderExpansion {
 
                 if (params.equalsIgnoreCase("tag")) {
                     String tag = t.getTag();
-
-                    tag = tag.replace("$", "$");
                     replacePlaceholders(player.getPlayer(), tag);
                     text = tag;
                 } else if (params.equalsIgnoreCase("identifier")) {
