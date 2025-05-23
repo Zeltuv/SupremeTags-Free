@@ -220,17 +220,24 @@ public class CategoryMenu extends Paged {
             int endIndex = Math.min(startIndex + maxItemsPerPage, tag.size());
 
             tag.sort((tag1, tag2) -> {
+                // Priority 1: Order (lowest first)
+                int orderComparison = Integer.compare(tag1.getOrder(), tag2.getOrder());
+                if (orderComparison != 0) {
+                    return orderComparison;
+                }
+
+                // Priority 2: Permission (has permission comes before doesn't)
                 boolean hasPermission1 = menuUtil.getOwner().hasPermission(tag1.getPermission());
                 boolean hasPermission2 = menuUtil.getOwner().hasPermission(tag2.getPermission());
 
                 if (hasPermission1 && !hasPermission2) {
-                    return -1; // tag1 comes before tag2
+                    return -1;
                 } else if (!hasPermission1 && hasPermission2) {
-                    return 1; // tag2 comes before tag1
-                } else {
-                    // Sort alphabetically if both tags have permission or both don't
-                    return tag1.getIdentifier().compareTo(tag2.getIdentifier());
+                    return 1;
                 }
+
+                // Priority 3: Alphabetical by identifier
+                return tag1.getIdentifier().compareTo(tag2.getIdentifier());
             });
 
             currentItemsOnPage = 0;

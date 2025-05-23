@@ -65,7 +65,7 @@ public abstract class Paged extends Menu {
         String reset = SupremeTags.getInstance().getConfig().getString("gui.strings.reset-item");
         String active = SupremeTags.getInstance().getConfig().getString("gui.strings.active-item");
 
-        if (SupremeTags.getInstance().getConfig().getBoolean("gui.items.back-item")) {
+        if (SupremeTags.getInstance().getConfig().getBoolean("gui.items.back-item") && page > 0) {
             inventory.setItem(48, makeItem(Material.valueOf(Objects.requireNonNull(SupremeTags.getInstance().getConfig().getString("gui.layout.back-next-material")).toUpperCase()), back));
         }
 

@@ -7,5 +7,4 @@ public enum EditingType {
     CHANGING_CATEGORY,
     CHANGING_DESCRIPTION,
     CHANGING_COST;
-
 }

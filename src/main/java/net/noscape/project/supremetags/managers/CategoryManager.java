@@ -1,12 +1,10 @@
 package net.noscape.project.supremetags.managers;
 
-import lombok.Getter;
 import net.noscape.project.supremetags.*;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.*;
 
-@Getter
 public class CategoryManager {
 
     private final List<String> catorgies = new ArrayList<>();
@@ -40,6 +38,14 @@ public class CategoryManager {
 
     public FileConfiguration getCategoryConfig() {
         return SupremeTags.getInstance().getConfigManager().getConfig("categories.yml").get();
+    }
+
+    public List<String> getCatorgies() {
+        return catorgies;
+    }
+
+    public Map<String, Integer> getCatorgiesTags() {
+        return catorgiesTags;
     }
 
     public void reloadCategoryConfig() {

@@ -1,6 +1,8 @@
 package net.noscape.project.supremetags;
 
-import lombok.Getter;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.events.PacketAdapter;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.permission.Permission;
 import net.noscape.project.supremetags.api.SupremeTagsAPI;
@@ -13,16 +15,20 @@ import net.noscape.project.supremetags.handlers.Editor;
 import net.noscape.project.supremetags.handlers.hooks.PAPI;
 import net.noscape.project.supremetags.handlers.menu.MenuListener;
 import net.noscape.project.supremetags.handlers.menu.MenuUtil;
+import net.noscape.project.supremetags.handlers.packets.SystemChatPacketListener;
 import net.noscape.project.supremetags.listeners.PlayerEvents;
 import net.noscape.project.supremetags.managers.CategoryManager;
 import net.noscape.project.supremetags.managers.ConfigManager;
 import net.noscape.project.supremetags.managers.MergeManager;
 import net.noscape.project.supremetags.managers.TagManager;
 import net.noscape.project.supremetags.storage.*;
+import org.black_ixx.playerpoints.PlayerPoints;
+import org.black_ixx.playerpoints.PlayerPointsAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -33,7 +39,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
 
-@Getter
 public final class SupremeTags extends JavaPlugin {
 
     private static SupremeTags instance;
@@ -56,9 +61,14 @@ public final class SupremeTags extends JavaPlugin {
     private static final HashMap<Player, MenuUtil> menuUtilMap = new HashMap<>();
     private final HashMap<Player, Editor> editorList = new HashMap<>();
 
+    private PlayerPointsAPI ppAPI;
+
     private boolean legacy_format;
     private boolean cmiHex;
     private boolean disabledWorldsTag;
+
+    private ProtocolManager protocolManager;
+    private PacketAdapter chatAdapter;
 
     public static File latestConfigFile;
     public static FileConfiguration latestConfigConfig;
@@ -96,7 +106,6 @@ public final class SupremeTags extends JavaPlugin {
         }
     }
 
-
     private void init() {
         instance = this;
 
@@ -130,11 +139,48 @@ public final class SupremeTags extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new EditorListener(), this);
         getServer().getPluginManager().registerEvents(new UpdateChecker(this), this);
 
+        if (isProtocolLib()) {
+            try {
+                this.protocolManager = ProtocolLibrary.getProtocolManager();
+                this.chatAdapter = new SystemChatPacketListener(this);
+            } catch (Exception e) {
+                getLogger().warning("Failed to register ProtocolLib listener: " + e.getMessage());
+            }
+        } else {
+            getLogger().warning("Requires ProtocolLib to be installed. Disabling plugin.");
+            this.getServer().getPluginManager().disablePlugin(this);
+        }
+
+        if (isProtocolLib() && this.chatAdapter != null) {
+            this.protocolManager.addPacketListener(this.chatAdapter);
+        }
+
         legacy_format = getConfig().getBoolean("settings.legacy-hex-format");
         cmiHex = getConfig().getBoolean("settings.cmi-color-support");
         disabledWorldsTag = getConfig().getBoolean("settings.tag-command-in-disabled-worlds");
 
         merge(logger);
+
+        if (Bukkit.getPluginManager().getPlugin("PlayerPoints") != null) {
+            this.ppAPI = PlayerPoints.getInstance().getAPI();
+            if (getConfig().getString("settings.economy").equalsIgnoreCase("PLAYERPOINTS")) {
+                logger.info("> PlayerPoints: Found! (ECONOMY)");
+            } else {
+                logger.info("> PlayerPoints: Found!");
+            }
+        } else {
+            logger.info("> PlayerPoints: Not Found!");
+        }
+
+        if (isCoinsEngine()) {
+            if (getConfig().getString("settings.economy").startsWith("COINSENGINE-")) {
+                logger.info("> CoinsEngine: Found! (ECONOMY)");
+            } else {
+                logger.info("> CoinsEngine: Found!");
+            }
+        } else {
+            logger.info("> CoinsEngine: Not Found!");
+        }
 
         if (isPlaceholderAPI()) {
             logger.info(ChatColor.YELLOW + "> PlaceholderAPI: Found");
@@ -210,6 +256,11 @@ public final class SupremeTags extends JavaPlugin {
 
     public static H2Database getDatabase() { return h2; }
 
+    public boolean isProtocolLib() {
+        Plugin plugin = getServer().getPluginManager().getPlugin("ProtocolLib");
+        return plugin != null && plugin.isEnabled();
+    }
+
     public MySQLUserData getUser() {
         return instance.user;
     }
@@ -218,6 +269,42 @@ public final class SupremeTags extends JavaPlugin {
         return mysql;
     }
 
+    public MergeManager getMergeManager() {
+        return mergeManager;
+    }
+
+    public boolean isDisabledWorldsTag() {
+        return disabledWorldsTag;
+    }
+
+    public boolean isCmiHex() {
+        return cmiHex;
+    }
+
+    public boolean isLegacy_format() {
+        return legacy_format;
+    }
+
+    public boolean isUseSSL() {
+        return useSSL;
+    }
+
+    public PlayerPointsAPI getPpAPI() {
+        return ppAPI;
+    }
+
+
+    public HashMap<Player, Editor> getEditorList() {
+        return editorList;
+    }
+
+    public static HashMap<Player, MenuUtil> getMenuUtilMap() {
+        return menuUtilMap;
+    }
+
+    public static H2Database getH2() {
+        return h2;
+    }
 
     public void reload() {
         // Reload the config.yml
@@ -306,6 +393,10 @@ public final class SupremeTags extends JavaPlugin {
         return Objects.requireNonNull(getConfig().getString("data.type")).equalsIgnoreCase("MYSQL");
     }
 
+    public boolean isCoinsEngine() {
+        return getServer().getPluginManager().getPlugin("CoinsEngine") != null;
+    }
+
     public Boolean isDataCache() {
         return getConfig().getBoolean("data.cache-data");
     }
@@ -366,6 +457,14 @@ public final class SupremeTags extends JavaPlugin {
 
     public ConfigManager getConfigManager() {
         return configManager;
+    }
+
+    public TagManager getTagManager() {
+        return tagManager;
+    }
+
+    public CategoryManager getCategoryManager() {
+        return categoryManager;
     }
 
     private void deleteCurrentLatestConfig() {

@@ -11,12 +11,10 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
+import su.nightexpress.coinsengine.api.CoinsEngineAPI;
 
 import java.awt.Color;
 import java.lang.reflect.Field;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -115,23 +113,54 @@ public class Utils {
     }
 
     public static void addPerm(OfflinePlayer player, String permission) {
-        for (World world : Bukkit.getWorlds())
-            SupremeTags.getPermissions().playerAdd(world.getName(), player, permission);
+        SupremeTags.getPermissions().playerAdd(null, player, permission); // null = global
     }
 
     public static void removePerm(OfflinePlayer player, String permission) {
-        for (World world : Bukkit.getWorlds())
-            SupremeTags.getPermissions().playerRemove(world.getName(), player, permission);
+        SupremeTags.getPermissions().playerRemove(null, player, permission);
     }
 
     public static boolean hasAmount(Player player, double cost) {
-        return SupremeTags.getEconomy().has(player, cost);
+        SupremeTags instance = SupremeTags.getInstance();
+        String economyType = instance.getConfig().getString("settings.economy");
+
+        if (economyType != null) {
+            if (economyType.equalsIgnoreCase("VAULT")) {
+                return SupremeTags.getEconomy().has(player, cost);
+            } else if (economyType.equalsIgnoreCase("PLAYERPOINTS")) {
+                return SupremeTags.getInstance().getPpAPI().look(player.getUniqueId()) >= cost;
+            } else if (economyType.equalsIgnoreCase("EXP_LEVEL")) {
+                return player.getLevel() >= cost;
+            } else if (economyType.startsWith("COINSENGINE-")) {
+                String eco_name = economyType.replace("COINSENGINE-", "");
+                return CoinsEngineAPI.getBalance(player.getUniqueId(), eco_name) >= cost;
+            }
+        } else {
+            msgPlayer(player, "&cSeems like economy in config.yml for SupremeTags is missing.. Please tell the admins of the server!");
+        }
+
+        return false;
     }
 
     public static void take(Player player, double cost) {
-        SupremeTags.getEconomy().withdrawPlayer(player, cost);
-    }
+        SupremeTags instance = SupremeTags.getInstance();
+        String economyType = instance.getConfig().getString("settings.economy");
 
+        if (economyType != null) {
+            if (economyType.equalsIgnoreCase("VAULT")) {
+                SupremeTags.getEconomy().withdrawPlayer(player, cost);
+            } else if (economyType.equalsIgnoreCase("PLAYERPOINTS")) {
+                instance.getPpAPI().take(player.getUniqueId(), (int) cost);
+            } else if (economyType.equalsIgnoreCase("EXP_LEVEL")) {
+                player.setLevel((int) (player.getLevel() - cost));
+            } else if (economyType.startsWith("COINSENGINE-")) {
+                String eco_name = economyType.replace("COINSENGINE-", "");
+                CoinsEngineAPI.removeBalance(player.getUniqueId(), eco_name, cost);
+            }
+        } else {
+            msgPlayer(player, "&cSeems like economy in config.yml for SupremeTags is missing.. Please tell the admins of the server!");
+        }
+    }
     public static String deformat(String str) {
         return ChatColor.stripColor(format(str));
     }

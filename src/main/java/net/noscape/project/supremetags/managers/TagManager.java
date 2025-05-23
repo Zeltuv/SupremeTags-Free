@@ -5,6 +5,7 @@ import net.noscape.project.supremetags.*;
 import net.noscape.project.supremetags.handlers.Tag;
 import org.bukkit.*;
 import org.bukkit.command.*;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.*;
 
@@ -37,7 +38,9 @@ public class TagManager {
 
             String default_category = SupremeTags.getInstance().getConfig().getString("settings.default-category");
 
-            Tag tag = new Tag(identifier, tag_string, default_category, permission, description, cost);
+            int orderID = tags.size() + 1;
+
+            Tag tag = new Tag(identifier, tag_string, default_category, permission, description, cost, orderID);
             tags.put(identifier, tag);
 
             getTagConfig().set("tags." + identifier + ".tag", tag_string);
@@ -60,7 +63,9 @@ public class TagManager {
 
             String default_category = SupremeTags.getInstance().getConfig().getString("settings.default-category");
 
-            Tag tag = new Tag(identifier, tag_string, default_category, permission, description, cost);
+            int orderID = tags.size() + 1;
+
+            Tag tag = new Tag(identifier, tag_string, default_category, permission, description, cost, orderID);
             tags.put(identifier, tag);
 
             getTagConfig().set("tags." + identifier + ".tag", tag_string);
@@ -83,7 +88,9 @@ public class TagManager {
 
             String default_category = SupremeTags.getInstance().getConfig().getString("settings.default-category");
 
-            Tag tag = new Tag(identifier, tag_string, default_category, permission, description, cost);
+            int orderID = tags.size() + 1;
+
+            Tag tag = new Tag(identifier, tag_string, default_category, permission, description, cost, orderID);
             tags.put(identifier, tag);
 
             getTagConfig().set("tags." + identifier + ".tag", tag_string);
@@ -102,7 +109,9 @@ public class TagManager {
 
             String default_category = SupremeTags.getInstance().getConfig().getString("settings.default-category");
 
-            Tag tag = new Tag(identifier, tag_string, default_category, permission, description, cost);
+            int orderID = tags.size() + 1;
+
+            Tag tag = new Tag(identifier, tag_string, default_category, permission, description, cost, orderID);
             tags.put(identifier, tag);
 
             getTagConfig().set("tags." + identifier + ".tag", tag_string);
@@ -151,29 +160,27 @@ public class TagManager {
     }
 
     public void loadTags() {
+        ConfigurationSection tagsSection = Objects.requireNonNull(getTagConfig().getConfigurationSection("tags"));
         int count = 0;
-        for (String identifier : Objects.requireNonNull(getTagConfig().getConfigurationSection("tags")).getKeys(false)) {
-            String tag = getTagConfig().getString("tags." + identifier + ".tag");
-            String category = getTagConfig().getString("tags." + identifier + ".category");
-            String description = getTagConfig().getString("tags." + identifier + ".description");
 
-            String permission;
-
-            if (getTagConfig().getString("tags." + identifier + ".permission") != null) {
-                permission = getTagConfig().getString("tags." + identifier + ".permission");
-            } else {
-                permission = "none";
-            }
-
-            double cost = getTagConfig().getDouble("tags." + identifier + ".cost");
-
-            Tag t = new Tag(identifier, tag, category, permission, description, cost);
-            tags.put(identifier, t);
+        for (String identifier : tagsSection.getKeys(false)) {
+            ConfigurationSection tagSection = tagsSection.getConfigurationSection(identifier);
+            if (tagSection == null) continue;
 
             count++;
+
+            String tag = tagSection.getString("tag", "");
+            String category = tagSection.getString("category", "");
+            String description = tagSection.getString("description", "");
+            String permission = tagSection.getString("permission", "none");
+            double cost = tagSection.getDouble("cost", 0.0);
+            int order = tagSection.getInt("order", count);
+
+            Tag t = new Tag(identifier, tag, category, permission, description, cost, order);
+            tags.put(identifier, t);
         }
 
-        Bukkit.getConsoleSender().sendMessage("[TAGS] loaded " + count + " tag(s) successfully.");
+        Bukkit.getConsoleSender().sendMessage("[TAGS] Loaded " + count + " tag(s) successfully.");
     }
 
     public Tag getTag(String tag) {

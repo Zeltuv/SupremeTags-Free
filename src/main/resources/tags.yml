@@ -10,6 +10,7 @@ tags:
     permission: 'supremetags.tag.hex'
     description: '&7This plugin supports normal/hex colors'
     category: 'default'
+    order: 1
     displayname: '&7Tag: %tag%'
     display-item: 'NAME_TAG'
     cost: 200 # this is only implemented when 'cost-system' is enabled
@@ -18,6 +19,7 @@ tags:
     permission: 'supremetags.tag.santa'
     description: '&7ho ho hooooooo!'
     category: 'xmas'
+    order: 2
     displayname: '&7Tag: %tag%'
     display-item: 'NAME_TAG'
     cost: 100 # setting this to 0 when 'cost-system' is enabled, will make this tag free.

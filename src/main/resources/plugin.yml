@@ -3,7 +3,12 @@ version: '${project.version}'
 main: net.noscape.project.supremetags.SupremeTags
 api-version: 1.13
 depend: [NBTAPI]
-softdepend: [PlaceholderAPI, HeadDatabase, VaultAPI]
+softdepend:
+  - ProtocolLib
+  - PlaceholderAPI
+  - HeadDatabase
+  - VaultAPI
+  - ItemsAdder
 authors: [DevScape]
 folia-supported: true
 description: Allow players to show of their supreme tags!
