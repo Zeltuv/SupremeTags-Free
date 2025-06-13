@@ -1,0 +1,19 @@
+name: SupremeTags
+version: '2.0.9'
+main: net.noscape.project.supremetags.SupremeTags
+api-version: 1.13
+depend: [NBTAPI]
+softdepend:
+  - ProtocolLib
+  - PlaceholderAPI
+  - HeadDatabase
+  - VaultAPI
+  - ItemsAdder
+authors: [DevScape]
+folia-supported: true
+description: Allow players to show of their supreme tags!
+
+commands:
+  tags:
+    aliases: [tag, supremetags, stags]
+    description: main tag plugin to open menu and manage tags.

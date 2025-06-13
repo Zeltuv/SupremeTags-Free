@@ -1,0 +1,136 @@
+settings:
+  default-tag: none # set 'none' players start with no tag.
+  forced-tag: false # this will make it force players to have a tag, they won't beable to take the tag off.
+  categories: false # should supremetags use the category system?
+  default-category: default # used to set the tags category value when creating a new tag with the '/tag create' command
+  update-check: true # the plugin will check if there is an update available.
+  auto-merge: false # auto merges all tags from deluxetags into supremetags (DeluxeTags is required on the server)
+  active-tag-glow: true # adds a hidden enchantment to the tag item that is active for the player.
+  cost-system: false # should your players be able to buy tags?
+  tag-command-in-disabled-worlds: true # should /tags command be disabled in 'disabled-worlds'.
+  disabled-worlds: # what worlds should tags be allowed in, tags in this world will not be shown.
+    - example
+    - world2
+  gui-messages: true # setting this to true, will enable 'tag-select-message' & 'reset-message'
+  locked-view: false # this setting allows players to view locked/unlocked tags.
+  none-output: '&6None' # this string will be displayed when a player has no tag selected.
+  economy: 'VAULT' # Available eco types: [VAULT, PLAYERPOINTS, EXP_LEVELS, COINSENGINE-currencyhere]
+  only-show-player-access-tags: false # if true, the tag menus will only show the tags that the player has access to.
+messages:
+  tag-select-message: '&8[&6&lTags&8] &e%identifier% &7tag selected.'
+  reset-message: '&8[&6&lTags&8] &7Reset tag.'
+  insufficient-funds: '&cInsufficient funds. &7You need &c$%cost% &7to get this tag.'
+  tag-unlocked: '&8[&6Tags&8] &7You have unlocked the tag: &6%identifier%'
+  reload: '&8[&6&lTag&8] &7Reloaded plugin.'
+  no-permission: '&cNo Permission.'
+  no-tags: '&cYou have no tags yet.'
+  tag-command-disabled: '&cTag command is disabled in this world.'
+  invalid-tag: '&cThis tag does not exist.'
+  valid-tag: '&cThis tag already exists.'
+  invalid-category: '&cThis category does not exist.'
+  locked-tag: '&cYou do not have access to select this tag!'
+data:
+  
+  # Should SupremeTags cache data? this will optimize the amount of connections being used but will minimize db use across servers.
+  # If disabled, this setting only applies to MySQL type.
+  cache-data: true
+  
+  # types: [H2 OR MYSQL]
+  type: H2
+  
+  # The address for the database server.
+  # - to enable this part, change type to 'MYSQL'
+  # - some hosts can use your domain or server ip.
+  address: host
+  # The standard DB engine port is used by default
+  port: 3306
+  # The name of the database to store tag data in.
+  database: database
+  # Credentials for the database.
+  username: user
+  password: pass
+  useSSL: false
+  
+  # connection pool settings.
+  mysql-pool-settings:
+    minimum-idle: 10
+    maximum-pool-size: 20
+    timeouts:
+      idle: 870000000
+      connection: 870000000
+      max-lifetime: 870000000
+gui:
+  main-menu:
+    title: '&8Main Menu'
+    size: 27
+  tag-menu-none-categories:
+    title: '&8Tag Menu'
+    tag-item: # to edit the tags display name, please proceed below to 'tags.<identifier>.displayname'
+      # used when the tag has been selected.
+      selected-lore:
+        - '&e%description%'
+        - ''
+        - '&7Preview &8➜'
+        - '&8- %tag% &f%player_name%&8: &fHello!'
+        - ''
+        - '&a&nTag has been selected!'
+      # used for cost lores that are locked
+      locked-lore:
+        - '&e%description%'
+        - ''
+        - '&7Preview &8➜'
+        - '&8- %tag% &f%player_name%&8: &fHello!'
+        - ''
+        - '&7Buy &8&l> &fRight-Click'
+        - '&7Cost &8&l> &f$%cost%'
+        - ''
+        - '&c&nThis tag is locked!'
+      # used for when 'locked-view' is enabled and players doesn't have permission
+      locked-permission:
+        - '&e%description%'
+        - ''
+        - '&7Preview &8➜'
+        - '&8- %tag% &f%player_name%&8: &fHello!'
+        - ''
+        - '&7No permission to select this tag!'
+        - ''
+        - '&c&nThis tag is locked!'
+      # used for unlocked view of the tag
+      unlocked-lore:
+        - '&e%description%'
+        - ''
+        - '&7Preview &8➜'
+        - '&8- %tag% &f%player_name%&8: &fHello!'
+        - ''
+        - '&e&nClick to Assign!'
+  tag-editor-menu:
+    title: '&8Tag Editor'
+    tag-item:
+      displayname: '&7Tag: %tag%'
+      lore:
+        - '&8Edit Tag'
+        - ''
+        - '&e&nClick to Edit!'
+  # edit the material of all items inside the gui.
+  layout:
+    glass-material: GRAY_STAINED_GLASS_PANE
+    back-next-material: DARK_OAK_BUTTON
+    reset-tag-material: RED_DYE
+    active-tag-material: NAME_TAG
+    close-menu-material: BARRIER
+  # edit the item names of all items inside the gui.
+  strings:
+    back-item: '&7Back'
+    next-item: '&7Next'
+    reset-item: '&cReset'
+    active-item: '&7Active: &6%identifier%'
+    close-item: '&cClose'
+  # disable items in the gui.
+  # setting these values to false will not display the item in tag gui.
+  items:
+    close-item: true
+    reset-item: true
+    glass-item: true
+    active-item: true
+    next-item: true # this only applies to tag type guis.
+    back-item: true # this only applies to tag type guis.

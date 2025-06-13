@@ -66,6 +66,17 @@ public class PAPI extends PlaceholderExpansion {
                     String tag = t.getTag();
                     replacePlaceholders(player.getPlayer(), tag);
                     text = tag;
+                }else if(params.equalsIgnoreCase("chat")){
+                    String tag = t.getTag();
+
+                    if(t.getTag().toLowerCase().contains("none")){
+                        text="";
+                    }else{
+
+                        replacePlaceholders(player.getPlayer(), tag);
+                        text = " "+tag;
+                    }
+
                 } else if (params.equalsIgnoreCase("identifier")) {
                     text = t.getIdentifier();
                 } else if (params.equalsIgnoreCase("description")) {
@@ -78,7 +89,7 @@ public class PAPI extends PlaceholderExpansion {
                     text = String.valueOf(t.getCost());
                 }
             } else {
-                text = SupremeTags.getInstance().getConfig().getString("settings.none-output");
+                text ="";
             }
         }
 
